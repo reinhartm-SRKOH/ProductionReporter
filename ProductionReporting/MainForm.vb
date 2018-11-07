@@ -257,10 +257,13 @@ Public Class MainForm
 
         Select Case currentActivity
             Case "production"
+                Call Copy_Form_Data()
                 Call Report_Production()
             Case "downtime"
+                Call Copy_Form_Data()
                 Call Report_Downtime()
             Case "scrap"
+                Call Copy_Form_Data()
                 Call Report_Scrap()
         End Select
 
@@ -498,35 +501,24 @@ Public Class MainForm
     Private Sub Report_Production()
         ' Implement reporting production code here
 
-        Dim shift As String
-        Dim reportDate As String
-        Dim associate As String
-        Dim prodLine As String
-        Dim partNumber As String
-        Dim quantity As String
-        Dim reportTime As String
         Dim radleyString As String
 
-        shift = Shift_Check()
-        If shift = "0" Then
+        prodData.Shift = Shift_Check()
+        If prodData.Shift = "0" Then
             MsgBox("ERROR: No Shift Was Selected")
             Exit Sub
         End If
 
-        reportDate = Date.Now.ToString("MMddyyyy")
-        associate = TextBoxInput3.Text
-        prodLine = TextBoxInput2.Text
-        partNumber = TextBoxInput5.Text
-        quantity = TextBoxInput12.Text
-        reportTime = Date.Now.ToString("MMddyyyy HH:mm")
+        prodData.RunDate = Date.Now.ToString("MMddyyyy")
+        prodData.Runtime = Date.Now.ToString("MMddyyyy HH:mm")
 
         ' Example Data: 1|11052018|2829|AS11|21671A1-AD|76|11052018 10:42|||||<CR>
-        radleyString = shift + "|" + reportDate + "|" + associate + "|" + prodLine + "|" + partNumber + "|" + quantity + "|" + reportTime + "|" + "|" + "|" + "|" + "|" + "<CR>"
+        radleyString = prodData.Shift + "|" + prodData.RunDate + "|" + prodData.Associate + "|" + prodData.ProdLine + "|" + prodData.PartNumber + "|" + prodData.ProductionQty + "|" + prodData.Runtime + "|" + "|" + "|" + "|" + "|" + "<CR>"
 
-        ' If desired, validate the entered data here. If we decide to just let Watchdog/Radley handle erroneous data, then skip this validation.
+        ' ***If desired, validate the entered data here. If we decide to just let Watchdog/Radley handle erroneous data, then skip this validation.
         '   Call Oracle API's here.
 
-        ' create a text file containing the radleyString and place it into the appropriate Radley Production folder for watchdog to pick it up.
+        ' Create a text file containing the radleyString and place it into the appropriate Radley Production folder for watchdog to pick it up.
         Call WriteToFile(radleyString)
 
     End Sub
