@@ -1,9 +1,10 @@
-﻿Imports Oracle.ManagedDataAccess.Client
-Imports Oracle.ManagedDataAccess.Types
+﻿Imports System.Data.OracleClient
 
 Public Class MainForm
 
-
+    Dim prodData As New FormData
+    Dim downtimeData As New FormData
+    Dim scrapData As New FormData
 
     Dim currentActivity As String = ""
 
@@ -14,6 +15,10 @@ Public Class MainForm
     End Sub
 
     Private Sub PictureBox1_Click(sender As Object, e As EventArgs) Handles PictureBox1.Click
+
+        ' This will prevent the saved FormData from being cleared in the copy_form_data().  Without it, it's cleared
+        '   because we end up copying the textbox data to the class, but all fields are empty on the home screen.
+        currentActivity = "home"
 
         Call Reset_Form()
 
@@ -61,6 +66,19 @@ Public Class MainForm
         TextBoxInput11.Enabled = True
         TextBoxInput12.Enabled = True
 
+        TextBoxInput1.Text = ""
+        TextBoxInput2.Text = ""
+        TextBoxInput3.Text = ""
+        TextBoxInput4.Text = ""
+        TextBoxInput5.Text = ""
+        TextBoxInput6.Text = ""
+        TextBoxInput7.Text = ""
+        TextBoxInput8.Text = ""
+        TextBoxInput9.Text = ""
+        TextBoxInput10.Text = ""
+        TextBoxInput11.Text = ""
+        TextBoxInput12.Text = ""
+
         RadioButtonShift1.Checked = False
         RadioButtonShift2.Checked = False
         RadioButtonShift3.Checked = False
@@ -79,9 +97,15 @@ Public Class MainForm
 
     Private Sub ButtonProduction_Click(sender As Object, e As EventArgs) Handles ButtonProduction.Click
 
+        ' For maintaining current textbox data.
+        '   Must be called before Reset_Form() and before currentActivity value changes.
+        Call Copy_Form_Data()
+
         Call Reset_Form()
 
         currentActivity = "production"
+
+        Call Update_Form_Fields()
 
         LabelInput1.Text = "Site:"
         LabelInput2.Text = "Associate:"
@@ -122,7 +146,7 @@ Public Class MainForm
 
         TextBoxInput2.Select()
 
-        Default_Shift()
+        Call Default_Shift()
 
         TextBoxInput1.Text = My.Settings.Site
         TextBoxInput1.Enabled = False
@@ -133,9 +157,15 @@ Public Class MainForm
 
     Private Sub ButtonDowntime_Click(sender As Object, e As EventArgs) Handles ButtonDowntime.Click
 
+        ' For maintaining current textbox data.
+        '   Must be called before Reset_Form() and before currentActivity value changes.
+        Call Copy_Form_Data()
+
         Call Reset_Form()
 
         currentActivity = "downtime"
+
+        Call Update_Form_Fields()
 
         LabelInput1.Text = "Site:"
         LabelInput2.Text = "Associate:"
@@ -167,7 +197,7 @@ Public Class MainForm
 
         TextBoxInput2.Select()
 
-        Default_Shift()
+        Call Default_Shift()
 
         TextBoxInput1.Text = My.Settings.Site
         TextBoxInput1.Enabled = False
@@ -176,9 +206,15 @@ Public Class MainForm
 
     Private Sub ButtonScrap_Click(sender As Object, e As EventArgs) Handles ButtonScrap.Click
 
+        ' For maintaining current textbox data.
+        '   Must be called before Reset_Form() and before currentActivity value changes.
+        Call Copy_Form_Data()
+
         Call Reset_Form()
 
         currentActivity = "scrap"
+
+        Call Update_Form_Fields()
 
         LabelInput1.Text = "Site:"
         LabelInput2.Text = "Associate:"
@@ -210,7 +246,7 @@ Public Class MainForm
 
         TextBoxInput2.Select()
 
-        Default_Shift()
+        Call Default_Shift()
 
         TextBoxInput1.Text = My.Settings.Site
         TextBoxInput1.Enabled = False
@@ -264,17 +300,56 @@ Public Class MainForm
         Return shift
     End Function
 
-    Private Sub Validate_Part_Num(part_num As String)
-        ' Connect to oracle database and validate the user inputed part number and production line.
+    Private Sub Copy_Form_Data()
+        If currentActivity = "production" Then
+            prodData.Associate = TextBoxInput2.Text
+            prodData.PartNumber = TextBoxInput3.Text
+            prodData.ProdLine = TextBoxInput4.Text
+            prodData.CavityCount = TextBoxInput5.Text
+            prodData.Shots = TextBoxInput7.Text
+            prodData.FreeShots = TextBoxInput8.Text
+            prodData.ScrappedPieces = TextBoxInput10.Text
 
+        ElseIf currentActivity = "downtime" Then
+            downtimeData.Associate = TextBoxInput2.Text
+            downtimeData.PartNumber = TextBoxInput3.Text
+            downtimeData.ProdLine = TextBoxInput4.Text
+            downtimeData.DowntimeCode = TextBoxInput7.Text
+            downtimeData.DowntimeReason = TextBoxInput8.Text
+            downtimeData.DowntimeQty = TextBoxInput9.Text
 
+        ElseIf currentActivity = "scrap" Then
+            scrapData.Associate = TextBoxInput2.Text
+            scrapData.PartNumber = TextBoxInput3.Text
+            scrapData.ProdLine = TextBoxInput4.Text
+            scrapData.ScrapCode = TextBoxInput7.Text
+            scrapData.ScrapReason = TextBoxInput8.Text
+            scrapData.ScrapQty = TextBoxInput9.Text
+
+        End If
 
     End Sub
 
+    'Private Sub Validate_Part_Num(part_num As String)
+    ' Connect to oracle database and validate the user inputed part number and production line.
+
+
+    'End Sub
+
     Private Sub TextBoxInput5_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput5.Leave
+        Dim result As Integer
+
         Select Case currentActivity
             Case "production"
-                Update_Production_Fields()
+                If Not String.IsNullOrEmpty(TextBoxInput5.Text) Then
+                    If Integer.TryParse(TextBoxInput5.Text, result) Then
+                        Call Update_Quantity_Fields()
+                    Else
+                        MsgBox("ERROR: Entry is not a valid format.")
+                        TextBoxInput5.Select()
+                    End If
+                End If
+
             Case "downtime"
                 '
             Case "scrap"
@@ -283,9 +358,19 @@ Public Class MainForm
     End Sub
 
     Private Sub TextBoxInput7_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput7.Leave
+        Dim result As Integer
+
         Select Case currentActivity
             Case "production"
-                Update_Production_Fields()
+                If Not String.IsNullOrEmpty(TextBoxInput7.Text) Then
+                    If Integer.TryParse(TextBoxInput7.Text, result) Then
+                        Call Update_Quantity_Fields()
+                    Else
+                        MsgBox("ERROR: Entry is not a valid format.")
+                        TextBoxInput7.Select()
+                    End If
+                End If
+
             Case "downtime"
                 '
             Case "scrap"
@@ -294,9 +379,19 @@ Public Class MainForm
     End Sub
 
     Private Sub TextBoxInput8_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput8.Leave
+        Dim result As Integer
+
         Select Case currentActivity
             Case "production"
-                Update_Production_Fields()
+                If Not String.IsNullOrEmpty(TextBoxInput8.Text) Then
+                    If Integer.TryParse(TextBoxInput8.Text, result) Then
+                        Call Update_Quantity_Fields()
+                    Else
+                        MsgBox("ERROR: Entry is not a valid format.")
+                        TextBoxInput8.Select()
+                    End If
+                End If
+
             Case "downtime"
                 '
             Case "scrap"
@@ -305,17 +400,29 @@ Public Class MainForm
     End Sub
 
     Private Sub TextBoxInput10_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput10.Leave
+        Dim result As Integer
+
         Select Case currentActivity
             Case "production"
-                Update_Production_Fields()
+                If Not String.IsNullOrEmpty(TextBoxInput10.Text) Then
+                    If Integer.TryParse(TextBoxInput10.Text, result) Then
+                        Call Update_Quantity_Fields()
+                    Else
+                        MsgBox("ERROR: Entry is not a valid format.")
+                        TextBoxInput10.Select()
+                    End If
+                End If
+
             Case "downtime"
                 '
+
             Case "scrap"
                 '
+
         End Select
     End Sub
 
-    Private Sub Update_Production_Fields()
+    Private Sub Update_Quantity_Fields()
         Dim totalPartsMade As Integer
         Dim totalGoodPartsMade As Integer
         Dim cavityCount As Integer
@@ -357,6 +464,37 @@ Public Class MainForm
 
     End Sub
 
+    Private Sub Update_Form_Fields()
+        If currentActivity = "production" Then
+            TextBoxInput2.Text = prodData.Associate()
+            TextBoxInput3.Text = prodData.PartNumber()
+            TextBoxInput4.Text = prodData.ProdLine()
+            TextBoxInput5.Text = prodData.CavityCount()
+            TextBoxInput7.Text = prodData.Shots()
+            TextBoxInput8.Text = prodData.FreeShots()
+            TextBoxInput10.Text = prodData.ScrappedPieces()
+
+            Call Update_Quantity_Fields()
+
+        ElseIf currentActivity = "downtime" Then
+            TextBoxInput2.Text = downtimeData.Associate()
+            TextBoxInput3.Text = downtimeData.PartNumber()
+            TextBoxInput4.Text = downtimeData.ProdLine()
+            TextBoxInput7.Text = downtimeData.DowntimeCode()
+            TextBoxInput8.Text = downtimeData.DowntimeReason()
+            TextBoxInput9.Text = downtimeData.DowntimeQty()
+
+        ElseIf currentActivity = "scrap" Then
+            TextBoxInput2.Text = scrapData.Associate()
+            TextBoxInput3.Text = scrapData.PartNumber()
+            TextBoxInput4.Text = scrapData.ProdLine()
+            TextBoxInput7.Text = scrapData.ScrapCode()
+            TextBoxInput8.Text = scrapData.ScrapReason()
+            TextBoxInput9.Text = scrapData.ScrapQty()
+
+        End If
+    End Sub
+
     Private Sub Report_Production()
         ' Implement reporting production code here
 
@@ -375,17 +513,6 @@ Public Class MainForm
             Exit Sub
         End If
 
-        'If RadioButtonShift1.Checked Then
-        '    shift = "1"
-        'ElseIf RadioButtonShift2.Checked Then
-        '    shift = "2"
-        'ElseIf RadioButtonShift3.Checked Then
-        '    shift = "3"
-        'Else
-        '    MsgBox("ERROR: A shift must be selected!")
-        '    Exit Sub
-        'End If
-
         reportDate = Date.Now.ToString("MMddyyyy")
         associate = TextBoxInput3.Text
         prodLine = TextBoxInput2.Text
@@ -395,6 +522,9 @@ Public Class MainForm
 
         ' Example Data: 1|11052018|2829|AS11|21671A1-AD|76|11052018 10:42|||||<CR>
         radleyString = shift + "|" + reportDate + "|" + associate + "|" + prodLine + "|" + partNumber + "|" + quantity + "|" + reportTime + "|" + "|" + "|" + "|" + "|" + "<CR>"
+
+        ' If desired, validate the entered data here. If we decide to just let Watchdog/Radley handle erroneous data, then skip this validation.
+        '   Call Oracle API's here.
 
         ' create a text file containing the radleyString and place it into the appropriate Radley Production folder for watchdog to pick it up.
         Call WriteToFile(radleyString)
@@ -420,6 +550,7 @@ Public Class MainForm
         Dim fileName As String
         Dim shift As String
         Dim reportDateTime As String
+        Dim prodLine As String = TextBoxInput3.Text
 
         reportDateTime = Date.Now.ToString("MM.dd.yyyy.HHmmss")
 
