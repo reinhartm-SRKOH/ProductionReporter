@@ -6,13 +6,18 @@ Public Class MainForm
     Dim downtimeData As New FormData
     Dim scrapData As New FormData
 
-    Dim currentActivity As String = ""
+    Dim currentActivity As String
+    Private Const production As String = "production"
+    Private Const downtime As String = "downtime"
+    Private Const scrap As String = "scrap"
+
 
     Private Sub MainForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
 
         Call Reset_Form()
 
     End Sub
+
 
     Private Sub PictureBox1_Click(sender As Object, e As EventArgs) Handles PictureBox1.Click
 
@@ -23,6 +28,7 @@ Public Class MainForm
         Call Reset_Form()
 
     End Sub
+
 
     Private Sub Reset_Form()
         ButtonReport.Hide()
@@ -95,15 +101,16 @@ Public Class MainForm
 
     End Sub
 
+
     Private Sub ButtonProduction_Click(sender As Object, e As EventArgs) Handles ButtonProduction.Click
 
         ' For maintaining current textbox data.
-        '   Must be called before Reset_Form() and before currentActivity value changes.
+        '   Must be called before Reset_Form() and before currentActivity value modified.
         Call Copy_Form_Data()
 
         Call Reset_Form()
 
-        currentActivity = "production"
+        currentActivity = production
 
         Call Update_Form_Fields()
 
@@ -155,15 +162,16 @@ Public Class MainForm
 
     End Sub
 
+
     Private Sub ButtonDowntime_Click(sender As Object, e As EventArgs) Handles ButtonDowntime.Click
 
         ' For maintaining current textbox data.
-        '   Must be called before Reset_Form() and before currentActivity value changes.
+        '   Must be called before Reset_Form() and before currentActivity value modified.
         Call Copy_Form_Data()
 
         Call Reset_Form()
 
-        currentActivity = "downtime"
+        currentActivity = downtime
 
         Call Update_Form_Fields()
 
@@ -204,15 +212,16 @@ Public Class MainForm
 
     End Sub
 
+
     Private Sub ButtonScrap_Click(sender As Object, e As EventArgs) Handles ButtonScrap.Click
 
         ' For maintaining current textbox data.
-        '   Must be called before Reset_Form() and before currentActivity value changes.
+        '   Must be called before Reset_Form() and before currentActivity value modified.
         Call Copy_Form_Data()
 
         Call Reset_Form()
 
-        currentActivity = "scrap"
+        currentActivity = scrap
 
         Call Update_Form_Fields()
 
@@ -253,21 +262,38 @@ Public Class MainForm
 
     End Sub
 
-    Private Sub ButtonReport_Click(sender As Object, e As EventArgs) Handles ButtonReport.Click
 
+    Private Sub ButtonReport_Click(sender As Object, e As EventArgs) Handles ButtonReport.Click
+        Dim radleyString As String = ""
+
+        If Shift_Check() = "0" Then
+            MsgBox("ERROR: No Shift Was Selected")
+            Exit Sub
+        End If
+
+        Call Copy_Form_Data()
+
+        '    Below creates the string of data that watchdog processes to report production, downtime, and scrap.  The string is a little different
+        ' depending on which one you are reporting.  Below explains each section of the string.  Production Line, Part Number, and Prodcution Quantity
+        ' are required fields for watchdog.  Since downtime & scrap do not report production & it's a required field, we just put 0 in for that section.
+        '    SHIFT|DATE|ASSOCIATE|PRODUCTION LINE|PART NUMBER|PRODUCTION QTY|RUNTIME|DOWNTIME|DOWNTIME REASON|SCRAP|SCRAP REASON|<CR>
         Select Case currentActivity
-            Case "production"
-                Call Copy_Form_Data()
-                Call Report_Production()
-            Case "downtime"
-                Call Copy_Form_Data()
-                Call Report_Downtime()
-            Case "scrap"
-                Call Copy_Form_Data()
-                Call Report_Scrap()
+            Case production
+                ' Production string example: 1|11052018|2829|AS11|21671A1-AD|76|11052018 10:42|||||<CR>
+                radleyString = Shift_Check() + "|" + Date.Now.ToString("MMddyyyy") + "|" + prodData.Associate + "|" + prodData.ProdLine + "|" + prodData.PartNumber + "|" + prodData.ProductionQty + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + "|" + "|" + "|" + "|" + "<CR>"
+
+            Case downtime
+                ' Downtime string example: 1|11052018|2829|AS11|21671A1-AD|0|11052018 10:42|5|66|||<CR>
+                radleyString = Shift_Check() + "|" + Date.Now.ToString("MMddyyyy") + "|" + downtimeData.Associate + "|" + downtimeData.ProdLine + "|" + downtimeData.PartNumber + "|" + "0" + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + downtimeData.DowntimeQty + "|" + downtimeData.DowntimeCode + "|" + "|" + "|" + "<CR>"
+
+            Case scrap
+                ' Scrap string example: 1|11052018|2829|AS11|21671A1-AD|0|11052018 10:42|||2|66|<CR>
+                radleyString = Shift_Check() + "|" + Date.Now.ToString("MMddyyyy") + "|" + scrapData.Associate + "|" + scrapData.ProdLine + "|" + scrapData.PartNumber + "|" + "0" + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + "|" + "|" + scrapData.ScrapQty + "|" + scrapData.ScrapCode + "|" + "<CR>"
         End Select
 
+        Call WriteToFile(radleyString)
     End Sub
+
 
     ' Automatically select the correct radio button shift based on the current time.
     Private Sub Default_Shift()
@@ -286,6 +312,7 @@ Public Class MainForm
         End Select
     End Sub
 
+
     Function Shift_Check()
         Dim shift As String
 
@@ -303,8 +330,9 @@ Public Class MainForm
         Return shift
     End Function
 
+
     Private Sub Copy_Form_Data()
-        If currentActivity = "production" Then
+        If currentActivity = production Then
             prodData.Associate = TextBoxInput2.Text
             prodData.PartNumber = TextBoxInput3.Text
             prodData.ProdLine = TextBoxInput4.Text
@@ -312,8 +340,9 @@ Public Class MainForm
             prodData.Shots = TextBoxInput7.Text
             prodData.FreeShots = TextBoxInput8.Text
             prodData.ScrappedPieces = TextBoxInput10.Text
+            prodData.ProductionQty = TextBoxInput11.Text
 
-        ElseIf currentActivity = "downtime" Then
+        ElseIf currentActivity = downtime Then
             downtimeData.Associate = TextBoxInput2.Text
             downtimeData.PartNumber = TextBoxInput3.Text
             downtimeData.ProdLine = TextBoxInput4.Text
@@ -321,7 +350,7 @@ Public Class MainForm
             downtimeData.DowntimeReason = TextBoxInput8.Text
             downtimeData.DowntimeQty = TextBoxInput9.Text
 
-        ElseIf currentActivity = "scrap" Then
+        ElseIf currentActivity = scrap Then
             scrapData.Associate = TextBoxInput2.Text
             scrapData.PartNumber = TextBoxInput3.Text
             scrapData.ProdLine = TextBoxInput4.Text
@@ -333,17 +362,12 @@ Public Class MainForm
 
     End Sub
 
-    'Private Sub Validate_Part_Num(part_num As String)
-    ' Connect to oracle database and validate the user inputed part number and production line.
-
-
-    'End Sub
 
     Private Sub TextBoxInput5_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput5.Leave
         Dim result As Integer
 
         Select Case currentActivity
-            Case "production"
+            Case production
                 If Not String.IsNullOrEmpty(TextBoxInput5.Text) Then
                     If Integer.TryParse(TextBoxInput5.Text, result) Then
                         Call Update_Quantity_Fields()
@@ -353,18 +377,19 @@ Public Class MainForm
                     End If
                 End If
 
-            Case "downtime"
-                '
-            Case "scrap"
-                '
+            Case downtime
+                ' N/A
+            Case scrap
+                ' N/A
         End Select
     End Sub
+
 
     Private Sub TextBoxInput7_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput7.Leave
         Dim result As Integer
 
         Select Case currentActivity
-            Case "production"
+            Case production
                 If Not String.IsNullOrEmpty(TextBoxInput7.Text) Then
                     If Integer.TryParse(TextBoxInput7.Text, result) Then
                         Call Update_Quantity_Fields()
@@ -374,18 +399,19 @@ Public Class MainForm
                     End If
                 End If
 
-            Case "downtime"
-                '
-            Case "scrap"
-                '
+            Case downtime
+                ' N/A
+            Case scrap
+                ' N/A
         End Select
     End Sub
+
 
     Private Sub TextBoxInput8_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput8.Leave
         Dim result As Integer
 
         Select Case currentActivity
-            Case "production"
+            Case production
                 If Not String.IsNullOrEmpty(TextBoxInput8.Text) Then
                     If Integer.TryParse(TextBoxInput8.Text, result) Then
                         Call Update_Quantity_Fields()
@@ -395,18 +421,45 @@ Public Class MainForm
                     End If
                 End If
 
-            Case "downtime"
-                '
-            Case "scrap"
-                '
+            Case downtime
+                ' N/A
+            Case scrap
+                ' N/A
         End Select
     End Sub
+
+
+    Private Sub TextBoxInput9_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput9.Leave
+        Dim result As Integer
+
+        Select Case currentActivity
+            Case production
+                ' N/A
+            Case downtime
+                If Not String.IsNullOrEmpty(TextBoxInput9.Text) Then
+                    If Not Integer.TryParse(TextBoxInput9.Text, result) Then
+                        MsgBox("ERROR: Entry is not a valid format.")
+                        TextBoxInput9.Select()
+                    End If
+                End If
+
+            Case scrap
+                If Not String.IsNullOrEmpty(TextBoxInput9.Text) Then
+                    If Not Integer.TryParse(TextBoxInput9.Text, result) Then
+                        MsgBox("ERROR: Entry is not a valid format.")
+                        TextBoxInput9.Select()
+                    End If
+                End If
+
+        End Select
+    End Sub
+
 
     Private Sub TextBoxInput10_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput10.Leave
         Dim result As Integer
 
         Select Case currentActivity
-            Case "production"
+            Case production
                 If Not String.IsNullOrEmpty(TextBoxInput10.Text) Then
                     If Integer.TryParse(TextBoxInput10.Text, result) Then
                         Call Update_Quantity_Fields()
@@ -416,14 +469,13 @@ Public Class MainForm
                     End If
                 End If
 
-            Case "downtime"
-                '
-
-            Case "scrap"
-                '
-
+            Case downtime
+                ' N/A
+            Case scrap
+                ' N/A
         End Select
     End Sub
+
 
     Private Sub Update_Quantity_Fields()
         Dim totalPartsMade As Integer
@@ -467,8 +519,9 @@ Public Class MainForm
 
     End Sub
 
+
     Private Sub Update_Form_Fields()
-        If currentActivity = "production" Then
+        If currentActivity = production Then
             TextBoxInput2.Text = prodData.Associate()
             TextBoxInput3.Text = prodData.PartNumber()
             TextBoxInput4.Text = prodData.ProdLine()
@@ -479,7 +532,7 @@ Public Class MainForm
 
             Call Update_Quantity_Fields()
 
-        ElseIf currentActivity = "downtime" Then
+        ElseIf currentActivity = downtime Then
             TextBoxInput2.Text = downtimeData.Associate()
             TextBoxInput3.Text = downtimeData.PartNumber()
             TextBoxInput4.Text = downtimeData.ProdLine()
@@ -487,7 +540,7 @@ Public Class MainForm
             TextBoxInput8.Text = downtimeData.DowntimeReason()
             TextBoxInput9.Text = downtimeData.DowntimeQty()
 
-        ElseIf currentActivity = "scrap" Then
+        ElseIf currentActivity = scrap Then
             TextBoxInput2.Text = scrapData.Associate()
             TextBoxInput3.Text = scrapData.PartNumber()
             TextBoxInput4.Text = scrapData.ProdLine()
@@ -498,71 +551,31 @@ Public Class MainForm
         End If
     End Sub
 
-    Private Sub Report_Production()
-        ' Implement reporting production code here
 
-        Dim radleyString As String
-
-        prodData.Shift = Shift_Check()
-        If prodData.Shift = "0" Then
-            MsgBox("ERROR: No Shift Was Selected")
-            Exit Sub
-        End If
-
-        prodData.RunDate = Date.Now.ToString("MMddyyyy")
-        prodData.Runtime = Date.Now.ToString("MMddyyyy HH:mm")
-
-        ' Example Data: 1|11052018|2829|AS11|21671A1-AD|76|11052018 10:42|||||<CR>
-        radleyString = prodData.Shift + "|" + prodData.RunDate + "|" + prodData.Associate + "|" + prodData.ProdLine + "|" + prodData.PartNumber + "|" + prodData.ProductionQty + "|" + prodData.Runtime + "|" + "|" + "|" + "|" + "|" + "<CR>"
-
-        ' ***If desired, validate the entered data here. If we decide to just let Watchdog/Radley handle erroneous data, then skip this validation.
-        '   Call Oracle API's here.
-
-        ' Create a text file containing the radleyString and place it into the appropriate Radley Production folder for watchdog to pick it up.
-        Call WriteToFile(radleyString)
-
-    End Sub
-
-    Private Sub Report_Downtime()
-        ' Implement reporting downtime code here
-        MessageBox.Show("Feature Coming Soon!")
-
-    End Sub
-
-    Private Sub Report_Scrap()
-        ' Implement reporting scrap code here
-        MessageBox.Show("Feature Coming Soon!")
-
-    End Sub
-
+    ' Create a text file, name it, write the radleyString data to it, and place it into the Radley Production folder for watchdog to pick it up.
     Sub WriteToFile(ByVal radleyString As String)
-        Dim filePath As String = My.Settings.DropFolder
         Dim oFile As System.IO.FileStream = Nothing
         Dim oWrite As System.IO.StreamWriter = Nothing
+        Dim filePath As String = My.Settings.DropFolder
         Dim fileName As String
-        Dim shift As String
-        Dim reportDateTime As String
-        Dim prodLine As String = TextBoxInput3.Text
 
-        reportDateTime = Date.Now.ToString("MM.dd.yyyy.HHmmss")
-
-        shift = Shift_Check()
-        If shift = "0" Then
-            MsgBox("ERROR: No Shift Was Selected")
-            Exit Sub
+        ' Create the file name.
+        '   Example: "32001.AS11LiveProdReporter.1.11.05.2018.101242.txt"
+        If currentActivity = production Then
+            fileName = My.Settings.Site + "." + prodData.ProdLine + "LiveProdReporter." + Shift_Check() + "." + Date.Now.ToString("MM.dd.yyyy.HHmmss") + ".txt"
+        ElseIf currentActivity = downtime Then
+            fileName = My.Settings.Site + "." + downtimeData.ProdLine + "LiveProdReporter." + Shift_Check() + "." + Date.Now.ToString("MM.dd.yyyy.HHmmss") + ".txt"
+        ElseIf currentActivity = scrap Then
+            fileName = My.Settings.Site + "." + scrapData.ProdLine + "LiveProdReporter." + Shift_Check() + "." + Date.Now.ToString("MM.dd.yyyy.HHmmss") + ".txt"
         End If
-
-        ' Example File Name: 32001.AS11LiveProdReporter.1.11.05.2018.101242.txt
-        fileName = My.Settings.Site + "." + My.Settings.ProductionLine + "LiveProdReporter." + shift + "." + reportDateTime + ".txt"
 
         filePath = filePath + "\" + fileName
 
         oFile = New System.IO.FileStream(filePath, IO.FileMode.Create, IO.FileAccess.Write)
         oWrite = New System.IO.StreamWriter(oFile)
 
-        ' You can either use WRITE or WRITELINE method
+        ' Write to the file.
         oWrite.WriteLine(radleyString)
-
 
         ' Close the filestream and streamwriter
         oWrite.Close()

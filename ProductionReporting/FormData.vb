@@ -23,12 +23,6 @@
     Private scrapQtyValue As String
 
 
-    ' Used only when reporting, not on the form.
-    Private shiftValue As String
-    Private runDateValue As String
-    Private runtimeValue As String
-
-
 
 
     Public Property Associate() As String
@@ -162,36 +156,6 @@
         End Get
         Set(ByVal value As String)
             scrapQtyValue = value
-        End Set
-    End Property
-
-
-
-
-    Public Property Shift() As String
-        Get
-            Return shiftValue
-        End Get
-        Set(ByVal value As String)
-            shiftValue = value
-        End Set
-    End Property
-
-    Public Property RunDate() As String
-        Get
-            Return runDateValue
-        End Get
-        Set(ByVal value As String)
-            runDateValue = value
-        End Set
-    End Property
-
-    Public Property Runtime() As String
-        Get
-            Return runtimeValue
-        End Get
-        Set(ByVal value As String)
-            runtimeValue = value
         End Set
     End Property
 
