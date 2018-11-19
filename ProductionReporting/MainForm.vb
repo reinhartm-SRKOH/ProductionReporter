@@ -1,4 +1,5 @@
 ﻿Imports System.Data.OracleClient
+Imports System.IO
 
 Public Class MainForm
 
@@ -363,7 +364,63 @@ Public Class MainForm
     End Sub
 
 
-    Private Sub TextBoxInput5_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput5.Leave
+    ' Part Number textbox
+    Private Sub TextBoxInput3_Leave(sender As Object, e As EventArgs) Handles TextBoxInput3.Leave
+        If Not String.IsNullOrEmpty(TextBoxInput3.Text) Then
+            TextBoxInput3.Text = TextBoxInput3.Text.ToUpper()
+
+            If Validate_Part_Number(TextBoxInput3.Text) Then
+                ' Part Number is valid.
+
+                If Not String.IsNullOrEmpty(TextBoxInput4.Text) Then
+                    ' Production line field has data, verify it with the Part Number.
+
+                    If Not Validate_Prod_Line_Part() Then
+                        ' Part number is NOT setup for the entered production line.
+
+                        MsgBox("ERROR: This Part Number is NOT setup for the entered Production Line.")
+                        TextBoxInput3.Select()
+                    End If
+                End If
+            Else
+                ' Part Number is NOT valid.
+                MsgBox("ERROR: Part Number is NOT Valid.")
+                TextBoxInput3.Select()
+            End If
+
+        End If
+    End Sub
+
+
+    ' Production line textbox (Labeled as Machine Number for curing lines).
+    Private Sub TextBoxInput4_Leave(sender As Object, e As EventArgs) Handles TextBoxInput4.Leave
+        If Not String.IsNullOrEmpty(TextBoxInput4.Text) Then
+            TextBoxInput4.Text = TextBoxInput4.Text.ToUpper()
+
+            If Validate_Production_Line(TextBoxInput4.Text) Then
+                ' Production Line is valid.
+
+                If Not String.IsNullOrEmpty(TextBoxInput3.Text) Then
+                    ' Part Number field has data, verify it with the Production Line.
+
+                    If Not Validate_Prod_Line_Part() Then
+                        ' Production Line does not have the entered Part Number setup.
+
+                        MsgBox("ERROR: This Production Line does not have the entered Part Number setup.")
+                        TextBoxInput4.Select()
+                    End If
+                End If
+            Else
+                ' Production Line is NOT valid.
+                MsgBox("ERROR: Production Line is NOT Valid.")
+                TextBoxInput4.Select()
+            End If
+
+        End If
+    End Sub
+
+
+    Private Sub TextBoxInput5_Leave(sender As Object, e As EventArgs) Handles TextBoxInput5.Leave
         Dim result As Integer
 
         Select Case currentActivity
@@ -385,7 +442,7 @@ Public Class MainForm
     End Sub
 
 
-    Private Sub TextBoxInput7_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput7.Leave
+    Private Sub TextBoxInput7_Leave(sender As Object, e As EventArgs) Handles TextBoxInput7.Leave
         Dim result As Integer
 
         Select Case currentActivity
@@ -402,12 +459,20 @@ Public Class MainForm
             Case downtime
                 ' N/A
             Case scrap
-                ' N/A
+                If Not String.IsNullOrEmpty(TextBoxInput7.Text) Then
+                    ' Call procedure to check if the entered scrap code is in the scrap validation file.
+                    If Integer.TryParse(TextBoxInput7.Text, result) Then
+                        ' Call Validate_Scrap_Code(TextBoxInput7.Text)
+                    Else
+                        MsgBox("ERROR: Entry is not a valid format.")
+                        TextBoxInput7.Select()
+                    End If
+                End If
         End Select
     End Sub
 
 
-    Private Sub TextBoxInput8_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput8.Leave
+    Private Sub TextBoxInput8_Leave(sender As Object, e As EventArgs) Handles TextBoxInput8.Leave
         Dim result As Integer
 
         Select Case currentActivity
@@ -429,7 +494,7 @@ Public Class MainForm
     End Sub
 
 
-    Private Sub TextBoxInput9_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput9.Leave
+    Private Sub TextBoxInput9_Leave(sender As Object, e As EventArgs) Handles TextBoxInput9.Leave
         Dim result As Integer
 
         Select Case currentActivity
@@ -455,7 +520,7 @@ Public Class MainForm
     End Sub
 
 
-    Private Sub TextBoxInput10_TextChanged(sender As Object, e As EventArgs) Handles TextBoxInput10.Leave
+    Private Sub TextBoxInput10_Leave(sender As Object, e As EventArgs) Handles TextBoxInput10.Leave
         Dim result As Integer
 
         Select Case currentActivity
@@ -553,11 +618,11 @@ Public Class MainForm
 
 
     ' Create a text file, name it, write the radleyString data to it, and place it into the Radley Production folder for watchdog to pick it up.
-    Sub WriteToFile(ByVal radleyString As String)
-        Dim oFile As System.IO.FileStream = Nothing
-        Dim oWrite As System.IO.StreamWriter = Nothing
+    Private Sub WriteToFile(ByVal radleyString As String)
+        Dim oFile As FileStream = Nothing
+        Dim oWrite As StreamWriter = Nothing
         Dim filePath As String = My.Settings.DropFolder
-        Dim fileName As String
+        Dim fileName As String = ""
 
         ' Create the file name.
         '   Example: "32001.AS11LiveProdReporter.1.11.05.2018.101242.txt"
@@ -571,8 +636,8 @@ Public Class MainForm
 
         filePath = filePath + "\" + fileName
 
-        oFile = New System.IO.FileStream(filePath, IO.FileMode.Create, IO.FileAccess.Write)
-        oWrite = New System.IO.StreamWriter(oFile)
+        oFile = New FileStream(filePath, FileMode.Create, FileAccess.Write)
+        oWrite = New StreamWriter(oFile)
 
         ' Write to the file.
         oWrite.WriteLine(radleyString)
@@ -580,6 +645,65 @@ Public Class MainForm
         ' Close the filestream and streamwriter
         oWrite.Close()
         oFile.Close()
+
+        MsgBox("SUCCESS: " + currentActivity + " was reported!")
+
     End Sub
+
+
+    Private Function Validate_Part_Number(ByVal partNum As String)
+        ' Create schedule task in IFS to export the data from the Inventory Part window to a txt file.  Then use that data to validate
+        '    the user entered data.  ONLY export the part number column.
+        Dim reader = New StreamReader(My.Settings.PathToDataValidationFiles + "InventoryParts" + My.Settings.Site + ".txt")
+
+        While Not reader.EndOfStream
+            If reader.ReadLine() = partNum Then
+                ' Valid part number
+                Return True
+            End If
+        End While
+        Return False
+
+    End Function
+
+
+    Private Function Validate_Production_Line(ByVal prodLine As String)
+        ' Create schedule task in IFS to export the data from the Inventory Part window to a txt file.  Then use that data to validate
+        '    the user entered data.  ONLY export the part number column.
+        Dim reader = New StreamReader(My.Settings.PathToDataValidationFiles + "ProductionLines" + My.Settings.Site + ".txt")
+
+        While Not reader.EndOfStream
+            If reader.ReadLine() = prodLine Then
+                Return True
+            End If
+        End While
+        Return False
+
+    End Function
+
+
+    Private Function Validate_Prod_Line_Part()
+        ' Create schedule task in IFS to export the data from the Inventory Part window to a txt file.  Then use that data to validate
+        '    the user entered data.  ONLY export the part number column.
+        Dim reader = New StreamReader(My.Settings.PathToDataValidationFiles + "ProductionLineByPart" + My.Settings.Site + ".txt")
+        Dim lineData As String
+        Dim index As Integer
+        Dim partNum As String
+        Dim prodLine As String
+
+
+        While Not reader.EndOfStream
+            lineData = reader.ReadLine()
+            index = lineData.IndexOf("|")
+            prodLine = lineData.Substring(0, index)
+            partNum = lineData.Substring(index + 1)
+
+            If partNum = TextBoxInput3.Text And prodLine = TextBoxInput4.Text Then
+                Return True
+            End If
+        End While
+        Return False
+
+    End Function
 
 End Class

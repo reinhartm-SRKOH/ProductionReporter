@@ -98,6 +98,16 @@ Namespace My
                 Return CType(Me("Debugging"),String)
             End Get
         End Property
+        
+        <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("\\blufs.dtroh.com\Shared\reinhartm\1-Current Projects\20181030 - VB Production Re"& _ 
+            "porting Program\Exported Validation Data\")>  _
+        Public ReadOnly Property PathToDataValidationFiles() As String
+            Get
+                Return CType(Me("PathToDataValidationFiles"),String)
+            End Get
+        End Property
     End Class
 End Namespace
 
