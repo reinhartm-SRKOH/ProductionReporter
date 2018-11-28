@@ -92,7 +92,7 @@ Namespace My
         
         <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
          Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
-         Global.System.Configuration.DefaultSettingValueAttribute("False")>  _
+         Global.System.Configuration.DefaultSettingValueAttribute("True")>  _
         Public ReadOnly Property Debugging() As String
             Get
                 Return CType(Me("Debugging"),String)
@@ -106,6 +106,15 @@ Namespace My
         Public ReadOnly Property PathToDataValidationFiles() As String
             Get
                 Return CType(Me("PathToDataValidationFiles"),String)
+            End Get
+        End Property
+        
+        <Global.System.Configuration.ApplicationScopedSettingAttribute(),  _
+         Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+         Global.System.Configuration.DefaultSettingValueAttribute("True")>  _
+        Public ReadOnly Property EnterCuringProductionManually() As String
+            Get
+                Return CType(Me("EnterCuringProductionManually"),String)
             End Get
         End Property
     End Class

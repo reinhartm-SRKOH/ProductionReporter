@@ -59,6 +59,7 @@ Public Class MainForm
         TextBoxInput10.Hide()
         TextBoxInput11.Hide()
         TextBoxInput12.Hide()
+        ComboBox1.Hide()
 
         TextBoxInput1.Enabled = True
         TextBoxInput2.Enabled = True
@@ -72,6 +73,7 @@ Public Class MainForm
         TextBoxInput10.Enabled = True
         TextBoxInput11.Enabled = True
         TextBoxInput12.Enabled = True
+        ComboBox1.Enabled = True
 
         TextBoxInput1.Text = ""
         TextBoxInput2.Text = ""
@@ -85,6 +87,7 @@ Public Class MainForm
         TextBoxInput10.Text = ""
         TextBoxInput11.Text = ""
         TextBoxInput12.Text = ""
+        ComboBox1.Items.Clear()
 
         RadioButtonShift1.Checked = False
         RadioButtonShift2.Checked = False
@@ -115,42 +118,52 @@ Public Class MainForm
 
         Call Update_Form_Fields()
 
+
         LabelInput1.Text = "Site:"
         LabelInput2.Text = "Associate:"
         LabelInput3.Text = "Part Number:"
-        LabelInput4.Text = "Machine Number:"
-        LabelInput5.Text = "Cavity Count:"
-        LabelInput7.Text = "Shots:"
-        LabelInput8.Text = "Free Shots:"
-        LabelInput9.Text = "Total Parts Made:"
-        LabelInput10.Text = "Scrapped Pieces:"
-        LabelInput11.Text = "Total Good Production:"
+        LabelInput4.Text = "Production Line:"
+        If My.Settings.EnterCuringProductionManually Then
+            LabelInput5.Text = "Cavity Count:"
+            LabelInput7.Text = "Shots:"
+            LabelInput8.Text = "Free Shots:"
+            LabelInput9.Text = "Total Parts Made:"
+            LabelInput10.Text = "Scrapped Pieces:"
+            LabelInput11.Text = "Total Good Production:"
+        Else
+            LabelInput5.Text = "Quantity:"
+        End If
 
         LabelMenuDesc.Text = "Production"
 
         ButtonReport.Show()
+
 
         LabelInput1.Show()
         LabelInput2.Show()
         LabelInput3.Show()
         LabelInput4.Show()
         LabelInput5.Show()
-        LabelInput7.Show()
-        LabelInput8.Show()
-        LabelInput9.Show()
-        LabelInput10.Show()
-        LabelInput11.Show()
+        If My.Settings.EnterCuringProductionManually Then
+            LabelInput7.Show()
+            LabelInput8.Show()
+            LabelInput9.Show()
+            LabelInput10.Show()
+            LabelInput11.Show()
+        End If
 
         TextBoxInput1.Show()
         TextBoxInput2.Show()
         TextBoxInput3.Show()
         TextBoxInput4.Show()
         TextBoxInput5.Show()
-        TextBoxInput7.Show()
-        TextBoxInput8.Show()
-        TextBoxInput9.Show()
-        TextBoxInput10.Show()
-        TextBoxInput11.Show()
+        If My.Settings.EnterCuringProductionManually Then
+            TextBoxInput7.Show()
+            TextBoxInput8.Show()
+            TextBoxInput9.Show()
+            TextBoxInput10.Show()
+            TextBoxInput11.Show()
+        End If
 
         TextBoxInput2.Select()
 
@@ -182,7 +195,7 @@ Public Class MainForm
         LabelInput4.Text = "Production Line:"
         LabelInput7.Text = "Downtime Code:"
         LabelInput8.Text = "Downtime Reason:"
-        LabelInput9.Text = "Downtime:"
+        LabelInput9.Text = "Downtime Quantity:"
 
         LabelMenuDesc.Text = "Downtime"
 
@@ -201,7 +214,7 @@ Public Class MainForm
         TextBoxInput3.Show()
         TextBoxInput4.Show()
         TextBoxInput7.Show()
-        TextBoxInput8.Show()
+        ComboBox1.Show()
         TextBoxInput9.Show()
 
         TextBoxInput2.Select()
@@ -210,6 +223,8 @@ Public Class MainForm
 
         TextBoxInput1.Text = My.Settings.Site
         TextBoxInput1.Enabled = False
+
+        Call Populate_ComboBox()
 
     End Sub
 
@@ -251,7 +266,7 @@ Public Class MainForm
         TextBoxInput3.Show()
         TextBoxInput4.Show()
         TextBoxInput7.Show()
-        TextBoxInput8.Show()
+        ComboBox1.Show()
         TextBoxInput9.Show()
 
         TextBoxInput2.Select()
@@ -261,15 +276,20 @@ Public Class MainForm
         TextBoxInput1.Text = My.Settings.Site
         TextBoxInput1.Enabled = False
 
+        Call Populate_ComboBox()
+
     End Sub
 
 
     Private Sub ButtonReport_Click(sender As Object, e As EventArgs) Handles ButtonReport.Click
         Dim radleyString As String = ""
+        Dim shift As String
 
         If Shift_Check() = "0" Then
             MsgBox("ERROR: No Shift Was Selected")
             Exit Sub
+        Else
+            shift = Shift_Check()
         End If
 
         Call Copy_Form_Data()
@@ -281,18 +301,24 @@ Public Class MainForm
         Select Case currentActivity
             Case production
                 ' Production string example: 1|11052018|2829|AS11|21671A1-AD|76|11052018 10:42|||||<CR>
-                radleyString = Shift_Check() + "|" + Date.Now.ToString("MMddyyyy") + "|" + prodData.Associate + "|" + prodData.ProdLine + "|" + prodData.PartNumber + "|" + prodData.ProductionQty + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + "|" + "|" + "|" + "|" + "<CR>"
+                radleyString = shift + "|" + Date.Now.ToString("MMddyyyy") + "|" + prodData.Associate + "|" + prodData.ProdLine + "|" + prodData.PartNumber + "|" + prodData.ProductionQty + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + "|" + "|" + "|" + "|" + "<CR>"
 
             Case downtime
                 ' Downtime string example: 1|11052018|2829|AS11|21671A1-AD|0|11052018 10:42|5|66|||<CR>
-                radleyString = Shift_Check() + "|" + Date.Now.ToString("MMddyyyy") + "|" + downtimeData.Associate + "|" + downtimeData.ProdLine + "|" + downtimeData.PartNumber + "|" + "0" + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + downtimeData.DowntimeQty + "|" + downtimeData.DowntimeCode + "|" + "|" + "|" + "<CR>"
+                radleyString = shift + "|" + Date.Now.ToString("MMddyyyy") + "|" + downtimeData.Associate + "|" + downtimeData.ProdLine + "|" + downtimeData.PartNumber + "|" + "0" + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + downtimeData.DowntimeQty + "|" + downtimeData.DowntimeCode + "|" + "|" + "|" + "<CR>"
 
             Case scrap
                 ' Scrap string example: 1|11052018|2829|AS11|21671A1-AD|0|11052018 10:42|||2|66|<CR>
-                radleyString = Shift_Check() + "|" + Date.Now.ToString("MMddyyyy") + "|" + scrapData.Associate + "|" + scrapData.ProdLine + "|" + scrapData.PartNumber + "|" + "0" + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + "|" + "|" + scrapData.ScrapQty + "|" + scrapData.ScrapCode + "|" + "<CR>"
+                radleyString = shift + "|" + Date.Now.ToString("MMddyyyy") + "|" + scrapData.Associate + "|" + scrapData.ProdLine + "|" + scrapData.PartNumber + "|" + "0" + "|" + Date.Now.ToString("MMddyyyy HH:mm") + "|" + "|" + "|" + scrapData.ScrapQty + "|" + scrapData.ScrapCode + "|" + "<CR>"
         End Select
 
-        Call WriteToFile(radleyString)
+
+        If My.Settings.Debugging Then
+            MsgBox(radleyString)
+        Else
+            Call WriteToFile(radleyString)
+        End If
+
     End Sub
 
 
@@ -337,22 +363,26 @@ Public Class MainForm
             prodData.Associate = TextBoxInput2.Text
             prodData.PartNumber = TextBoxInput3.Text
             prodData.ProdLine = TextBoxInput4.Text
-            prodData.CavityCount = TextBoxInput5.Text
-            prodData.Shots = TextBoxInput7.Text
-            prodData.FreeShots = TextBoxInput8.Text
-            prodData.ScrappedPieces = TextBoxInput10.Text
-            prodData.ProductionQty = TextBoxInput11.Text
+            If My.Settings.EnterCuringProductionManually Then
+                prodData.CavityCount = TextBoxInput5.Text
+                prodData.Shots = TextBoxInput7.Text
+                prodData.FreeShots = TextBoxInput8.Text
+                prodData.ScrappedPieces = TextBoxInput10.Text
+                prodData.ProductionQty = TextBoxInput11.Text
+            Else
+                prodData.ProductionQty = TextBoxInput5.Text
+            End If
 
         ElseIf currentActivity = downtime Then
-            downtimeData.Associate = TextBoxInput2.Text
-            downtimeData.PartNumber = TextBoxInput3.Text
-            downtimeData.ProdLine = TextBoxInput4.Text
-            downtimeData.DowntimeCode = TextBoxInput7.Text
-            downtimeData.DowntimeReason = TextBoxInput8.Text
-            downtimeData.DowntimeQty = TextBoxInput9.Text
+                downtimeData.Associate = TextBoxInput2.Text
+                downtimeData.PartNumber = TextBoxInput3.Text
+                downtimeData.ProdLine = TextBoxInput4.Text
+                downtimeData.DowntimeCode = TextBoxInput7.Text
+                downtimeData.DowntimeReason = TextBoxInput8.Text
+                downtimeData.DowntimeQty = TextBoxInput9.Text
 
-        ElseIf currentActivity = scrap Then
-            scrapData.Associate = TextBoxInput2.Text
+            ElseIf currentActivity = scrap Then
+                scrapData.Associate = TextBoxInput2.Text
             scrapData.PartNumber = TextBoxInput3.Text
             scrapData.ProdLine = TextBoxInput4.Text
             scrapData.ScrapCode = TextBoxInput7.Text
@@ -364,7 +394,81 @@ Public Class MainForm
     End Sub
 
 
-    ' Part Number textbox
+    Private Sub Populate_ComboBox()
+        Dim fileName As String = ""
+        Dim site As String = ""
+        Select Case currentActivity
+            Case downtime
+                fileName = "InterruptionCauses"
+                site = My.Settings.Site
+            Case scrap
+                fileName = "ScrappingCauses"
+        End Select
+
+        Dim reader = New StreamReader(My.Settings.PathToDataValidationFiles + fileName + site + ".txt")
+        Dim lineData As String
+        Dim index As Integer
+        Dim downDesc As String
+
+        ComboBox1.Items.Clear()
+
+        While Not reader.EndOfStream
+            lineData = reader.ReadLine()
+            index = lineData.IndexOf("|")
+            downDesc = lineData.Substring(index + 1)
+
+            ComboBox1.Items.Add(downDesc)
+        End While
+    End Sub
+
+
+    Private Sub Populate_Downtime_Code()
+        Dim reader = New StreamReader(My.Settings.PathToDataValidationFiles + "InterruptionCauses" + My.Settings.Site + ".txt")
+        Dim lineData As String
+        Dim index As Integer
+        Dim dtCode As String
+        Dim dtDesc As String
+
+        While Not reader.EndOfStream
+            lineData = reader.ReadLine()
+            index = lineData.IndexOf("|")
+            dtCode = lineData.Substring(0, index)
+            dtDesc = lineData.Substring(index + 1)
+
+            If dtDesc = ComboBox1.Text Then
+                TextBoxInput7.Text = dtCode
+                Exit While
+            End If
+
+        End While
+
+    End Sub
+
+
+    Private Sub Populate_Scrap_Code()
+        Dim reader = New StreamReader(My.Settings.PathToDataValidationFiles + "ScrapCauses.txt")
+        Dim lineData As String
+        Dim index As Integer
+        Dim dtCode As String
+        Dim dtDesc As String
+
+        While Not reader.EndOfStream
+            lineData = reader.ReadLine()
+            index = lineData.IndexOf("|")
+            dtCode = lineData.Substring(0, index)
+            dtDesc = lineData.Substring(index + 1)
+
+            If dtDesc = ComboBox1.Text Then
+                TextBoxInput7.Text = dtCode
+                Exit While
+            End If
+
+        End While
+
+    End Sub
+
+
+    ' Part Number Textbox.
     Private Sub TextBoxInput3_Leave(sender As Object, e As EventArgs) Handles TextBoxInput3.Leave
         If Not String.IsNullOrEmpty(TextBoxInput3.Text) Then
             TextBoxInput3.Text = TextBoxInput3.Text.ToUpper()
@@ -392,7 +496,7 @@ Public Class MainForm
     End Sub
 
 
-    ' Production line textbox (Labeled as Machine Number for curing lines).
+    ' Production Line Textbox.
     Private Sub TextBoxInput4_Leave(sender As Object, e As EventArgs) Handles TextBoxInput4.Leave
         If Not String.IsNullOrEmpty(TextBoxInput4.Text) Then
             TextBoxInput4.Text = TextBoxInput4.Text.ToUpper()
@@ -424,7 +528,7 @@ Public Class MainForm
         Dim result As Integer
 
         Select Case currentActivity
-            Case production
+            Case production ' Cavity Count Textbox OR Quantity Textbox   (depending on the value of My.Settings.EnterCuringProductionManually)
                 If Not String.IsNullOrEmpty(TextBoxInput5.Text) Then
                     If Integer.TryParse(TextBoxInput5.Text, result) Then
                         Call Update_Quantity_Fields()
@@ -445,30 +549,30 @@ Public Class MainForm
     Private Sub TextBoxInput7_Leave(sender As Object, e As EventArgs) Handles TextBoxInput7.Leave
         Dim result As Integer
 
-        Select Case currentActivity
-            Case production
-                If Not String.IsNullOrEmpty(TextBoxInput7.Text) Then
-                    If Integer.TryParse(TextBoxInput7.Text, result) Then
-                        Call Update_Quantity_Fields()
-                    Else
-                        MsgBox("ERROR: Entry is not a valid format.")
-                        TextBoxInput7.Select()
-                    End If
-                End If
+        If Not String.IsNullOrEmpty(TextBoxInput7.Text) Then
+            If Integer.TryParse(TextBoxInput7.Text, result) Then
 
-            Case downtime
-                ' N/A
-            Case scrap
-                If Not String.IsNullOrEmpty(TextBoxInput7.Text) Then
-                    ' Call procedure to check if the entered scrap code is in the scrap validation file.
-                    If Integer.TryParse(TextBoxInput7.Text, result) Then
+                Select Case currentActivity
+                    Case production ' Field: Shots
+                        Call Update_Quantity_Fields()
+
+                    Case downtime ' Field: Downtime Code
+                        ' Call procedure to check if the entered downtime code is in the downtime validation file.
                         ' Call Validate_Scrap_Code(TextBoxInput7.Text)
-                    Else
-                        MsgBox("ERROR: Entry is not a valid format.")
-                        TextBoxInput7.Select()
-                    End If
-                End If
-        End Select
+
+                    Case scrap ' Field: Scrap Code
+                        ' Call procedure to check if the entered scrap code is in the scrap validation file.
+                        ' Call Validate_Scrap_Code(TextBoxInput7.Text)
+
+                End Select
+
+            Else
+                ' Entry is not a valid integer.
+                MsgBox("ERROR: Entry is not a valid format.")
+                TextBoxInput7.Select()
+            End If
+        End If
+
     End Sub
 
 
@@ -476,7 +580,7 @@ Public Class MainForm
         Dim result As Integer
 
         Select Case currentActivity
-            Case production
+            Case production ' Field: Free Shots
                 If Not String.IsNullOrEmpty(TextBoxInput8.Text) Then
                     If Integer.TryParse(TextBoxInput8.Text, result) Then
                         Call Update_Quantity_Fields()
@@ -487,9 +591,9 @@ Public Class MainForm
                 End If
 
             Case downtime
-                ' N/A
+                ' N/A - Downtime utilizes a combobox in the place of this.
             Case scrap
-                ' N/A
+                ' N/A - Scrap utilizes a combobox in the place of this.
         End Select
     End Sub
 
@@ -500,7 +604,7 @@ Public Class MainForm
         Select Case currentActivity
             Case production
                 ' N/A
-            Case downtime
+            Case downtime ' Field: Downtime Quantity
                 If Not String.IsNullOrEmpty(TextBoxInput9.Text) Then
                     If Not Integer.TryParse(TextBoxInput9.Text, result) Then
                         MsgBox("ERROR: Entry is not a valid format.")
@@ -508,7 +612,7 @@ Public Class MainForm
                     End If
                 End If
 
-            Case scrap
+            Case scrap ' Field: Scrap Quantity
                 If Not String.IsNullOrEmpty(TextBoxInput9.Text) Then
                     If Not Integer.TryParse(TextBoxInput9.Text, result) Then
                         MsgBox("ERROR: Entry is not a valid format.")
@@ -541,47 +645,59 @@ Public Class MainForm
         End Select
     End Sub
 
+    Private Sub ComboBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ComboBox1.SelectedIndexChanged
+        Select Case currentActivity
+            Case downtime
+                Call Populate_Downtime_Code()
+            Case scrap
+                'Call Populate_Scrap_Code()
+        End Select
+    End Sub
+
 
     Private Sub Update_Quantity_Fields()
-        Dim totalPartsMade As Integer
-        Dim totalGoodPartsMade As Integer
-        Dim cavityCount As Integer
-        Dim shots As Integer
-        Dim freeShots As Integer
-        Dim scrappedPieces As Integer
+        If My.Settings.EnterCuringProductionManually Then
 
-        ' Validate textbox data.  If none is entered, treat it as 0.
-        If String.IsNullOrEmpty(TextBoxInput5.Text) Then
-            cavityCount = 0
-        Else
-            cavityCount = Convert.ToInt32(TextBoxInput5.Text)
+            Dim totalPartsMade As Integer
+            Dim totalGoodPartsMade As Integer
+            Dim cavityCount As Integer
+            Dim shots As Integer
+            Dim freeShots As Integer
+            Dim scrappedPieces As Integer
+
+            ' Validate textbox data.  If none is entered, treat it as 0.
+            If String.IsNullOrEmpty(TextBoxInput5.Text) Then
+                cavityCount = 0
+            Else
+                cavityCount = Convert.ToInt32(TextBoxInput5.Text)
+            End If
+
+            If String.IsNullOrEmpty(TextBoxInput7.Text) Then
+                shots = 0
+            Else
+                shots = Convert.ToInt32(TextBoxInput7.Text)
+            End If
+
+            If String.IsNullOrEmpty(TextBoxInput8.Text) Then
+                freeShots = 0
+            Else
+                freeShots = Convert.ToInt32(TextBoxInput8.Text)
+            End If
+
+            If String.IsNullOrEmpty(TextBoxInput10.Text) Then
+                scrappedPieces = 0
+            Else
+                scrappedPieces = Convert.ToInt32(TextBoxInput10.Text)
+            End If
+
+
+            totalPartsMade = (cavityCount * shots) - (cavityCount * freeShots)
+            totalGoodPartsMade = totalPartsMade - scrappedPieces
+
+            TextBoxInput9.Text = totalPartsMade
+            TextBoxInput11.Text = totalGoodPartsMade
+
         End If
-
-        If String.IsNullOrEmpty(TextBoxInput7.Text) Then
-            shots = 0
-        Else
-            shots = Convert.ToInt32(TextBoxInput7.Text)
-        End If
-
-        If String.IsNullOrEmpty(TextBoxInput8.Text) Then
-            freeShots = 0
-        Else
-            freeShots = Convert.ToInt32(TextBoxInput8.Text)
-        End If
-
-        If String.IsNullOrEmpty(TextBoxInput10.Text) Then
-            scrappedPieces = 0
-        Else
-            scrappedPieces = Convert.ToInt32(TextBoxInput10.Text)
-        End If
-
-
-        totalPartsMade = (cavityCount * shots) - (cavityCount * freeShots)
-        totalGoodPartsMade = totalPartsMade - scrappedPieces
-
-        TextBoxInput9.Text = totalPartsMade
-        TextBoxInput11.Text = totalGoodPartsMade
-
     End Sub
 
 
@@ -590,12 +706,18 @@ Public Class MainForm
             TextBoxInput2.Text = prodData.Associate()
             TextBoxInput3.Text = prodData.PartNumber()
             TextBoxInput4.Text = prodData.ProdLine()
-            TextBoxInput5.Text = prodData.CavityCount()
-            TextBoxInput7.Text = prodData.Shots()
-            TextBoxInput8.Text = prodData.FreeShots()
-            TextBoxInput10.Text = prodData.ScrappedPieces()
 
-            Call Update_Quantity_Fields()
+            If My.Settings.EnterCuringProductionManually Then
+                TextBoxInput5.Text = prodData.CavityCount()
+                TextBoxInput7.Text = prodData.Shots()
+                TextBoxInput8.Text = prodData.FreeShots()
+                TextBoxInput10.Text = prodData.ScrappedPieces()
+
+                Call Update_Quantity_Fields()
+            Else
+                TextBoxInput5.Text = prodData.ProductionQty()
+            End If
+
 
         ElseIf currentActivity = downtime Then
             TextBoxInput2.Text = downtimeData.Associate()
@@ -604,6 +726,7 @@ Public Class MainForm
             TextBoxInput7.Text = downtimeData.DowntimeCode()
             TextBoxInput8.Text = downtimeData.DowntimeReason()
             TextBoxInput9.Text = downtimeData.DowntimeQty()
+
 
         ElseIf currentActivity = scrap Then
             TextBoxInput2.Text = scrapData.Associate()
@@ -705,5 +828,30 @@ Public Class MainForm
         Return False
 
     End Function
+
+
+    Private Function Validate_Downtime_Reason()
+
+        Dim reader = New StreamReader(My.Settings.PathToDataValidationFiles + "InterruptionCauses" + My.Settings.Site + ".txt")
+        Dim lineData As String
+        Dim index As Integer
+        Dim downCode As String
+        Dim downDesc As String
+
+        While Not reader.EndOfStream
+            lineData = reader.ReadLine()
+            index = lineData.IndexOf("|")
+            downCode = lineData.Substring(0, index)
+            downDesc = lineData.Substring(index + 1)
+
+            If reader.ReadLine() = downDesc Then
+
+                Return True
+            End If
+        End While
+        Return False
+
+    End Function
+
 
 End Class
