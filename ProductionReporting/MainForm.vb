@@ -95,10 +95,10 @@ Public Class MainForm
 
         ' Change the header to the company name.
         ' The company name is determined by the value you enter for the Company setting in the app.config file.
-        If My.Settings.Company = "SRKOH" Then
+        If My.Settings.Site = "32001" Then
             LabelMenuDesc.Text = "SumiRiko Ohio, Inc."
             PictureBox1.Image = Image.FromFile("C:\Users\reinhartm\source\repos\ProductionReporting\ProductionReporting\images\SRK-OH.jpg")
-        ElseIf My.Settings.Company = "SRKTN" Then
+        ElseIf My.Settings.Site = "33011" Or My.Settings.Site = "33021" Then
             LabelMenuDesc.Text = "SumiRiko Tennessee, Inc."
             PictureBox1.Image = Image.FromFile("C:\Users\reinhartm\source\repos\ProductionReporting\ProductionReporting\images\SRK-TN.jpg")
         End If

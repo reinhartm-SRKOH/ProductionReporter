@@ -2,26 +2,20 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="My" GeneratedClassName="MySettings" UseMySettingsClassName="true">
   <Profiles />
   <Settings>
-    <Setting Name="Company" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">SRKOH</Value>
-    </Setting>
     <Setting Name="Site" Type="System.String" Scope="Application">
       <Value Profile="(Default)">32001</Value>
-    </Setting>
-    <Setting Name="ProductionLine" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">ASY14</Value>
     </Setting>
     <Setting Name="DropFolder" Type="System.String" Scope="Application">
       <Value Profile="(Default)">C:\Users\reinhartm\source\repos\ProductionReporting\ProductionReporting\exports</Value>
     </Setting>
     <Setting Name="Debugging" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">True</Value>
+      <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="PathToDataValidationFiles" Type="System.String" Scope="Application">
       <Value Profile="(Default)">\\blufs.dtroh.com\Shared\reinhartm\1-Current Projects\20181030 - VB Production Reporting Program\Exported Validation Data\</Value>
     </Setting>
     <Setting Name="EnterCuringProductionManually" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">True</Value>
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>
